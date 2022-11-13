@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<!-- Load d3.js -->
+<script src="https://d3js.org/d3.v5.js"></script>
+<script
+src="https://code.jquery.com/jquery-3.6.1.min.js"
+integrity="sha256-o88AwQnZB+VDvE9tvIXrMQaPlFFSUTR+nldQm1LuPXQ="
+crossorigin="anonymous"></script>
+
+<script src="./js/jquery.debouncedresize.js"></script>
+<script src="./data/co2data.js"></script>
+<script src="./data/world.js"></script>
+
+<style>
+body {
+    background-color: black;
+    height:100%;
+    width:100%;
+}
+
+#tooltip {
+    position :absolute;
+}
+
+#story, #axis, #axis2, #stripes , #point{
+    position :absolute;
+   color : white;
+}
+
+#graph {
+    position :absolute;
+   color :lightblue;
+
+}
+
+
+.tooltip{
+    transition: 0.5s;
+    transition-property: opacity;
+    font-size: 0.8em;
+}
+.stripes {
+    transition: 0.5s;
+}
+
+.storyt {
+    transition: 0.3s;
+}
+
+.point, .legend { 
+    transition: 0.5s;
+}
+.axistext {
+    font-size: 0.8rem;
+    font-style: italic;
+    color : white;
+}
+
+</style>
+<!-- Create a div where the graph will take place -->
+<div id="graph">
+</div>
+<div id="axis">
+</div>
+<div id="axis2">
+</div><div id="story">
+</div><div id="tooltip">
+</div>
+<div id="stripes">
+</div>
+<div id="point">
+</div>
+
+
+
+<script>
+
+   
+
+margin=30;
+time=5000;
+taille=viewportSize();
+height=viewportSize().height-15-100;width=viewportSize().width-15-55;
+let scaleNegative = d3.scaleSequential()
+    .interpolator(d3.interpolateBlues);
+let scalePositive = d3.scaleSequential()
+    .interpolator(d3.interpolateReds);
+a=-0.5;b=1.5;
+scaleNegative.domain([0, a]);
+scalePositive.domain([0, b]);
+
+
+
+function curve (svg,svgaxis,svgaxis2,svgpoint,svgstripes) {     
+
+    
+    
+    taille=viewportSize();
+    height=viewportSize().height-125;width=viewportSize().width-85;
+
+        var xScale = d3.scaleLinear().domain([1955, 2025]).range([margin, width]);
+    var yScale = d3.scaleLinear().domain([310,420]).range([height-margin, margin]);
+
+    var lineGenerator = d3.line()
+    .curve(d3.curveCardinal);
+
+    lineGenerator
+    .x(function(d, i) {
+        return xScale(d.year);
+    })
+    .y(function(d,i) {
+        return yScale(d.value);
+    });
+
+    lineGenerator
+    .defined(function(d) {
+        return d !== null;
+    });
+
+
+
+ 
+
+        var pathData = lineGenerator(data); 
+
+        svg.interrupt();
+
+        d3.select("#axis"+nbc.toString()).remove();
+        d3.select("#axist"+nbc.toString()).remove();
+        d3.select("#axis2"+nbc.toString()).remove();  
+        d3.select("#axist2"+nbc.toString()).remove();
+        d3.select("#courbe"+nbc.toString()).remove();
+        d3.select("#point"+nbc.toString()).remove();
+        d3.select("#point2"+nbc.toString()).remove();
+        d3.select("#story"+nbc.toString()).remove();
+        d3.select("#stripes"+nbc.toString()).remove();
+        d3.select("#stripes2"+nbc.toString()).remove();
+        
+        nbc++;
+        
+        transX = (xScale(world[62].year)-xScale(world[0].year))/63
+    
+    svg.attr("width",viewportSize().width-15)
+            .attr("height", viewportSize().height-15);
+        
+    svg.append('path').attr("id","courbe"+nbc.toString()).attr('d', pathData)
+        .attr("fill","none").attr("stroke","currentColor").attr("stroke-width","3");
+    
+    svgstripes.attr("width", viewportSize().width-15)
+    .attr("height", viewportSize().height-15);
+
+    groupstripes=svgstripes.append("g").attr("id","stripes"+nbc.toString());
+
+    for (i=0;i<world.length;i++) {
+    d3.select("#stripes"+nbc.toString())
+    .append("rect")
+    .attr("class","stripes")
+    .attr("id", "stripe-" + world[i].year+nbc.toString())  
+    .attr("x", xScale(world[i].year)-transX/2)
+    .attr("y", height+5)
+    .attr("height", 80)
+    .attr("stroke-width",0)
+    .attr("fill", world[i].value > 0 ? scalePositive(world[i].value) : scaleNegative(world[i].value))
+    .attr("width", 0)
+    .style("opacity",0)
+    .transition().delay((i-1)*time/world.length).duration(time/world.length).ease(d3.easeLinear)
+    .attr("width", transX+0.5)
+    .style("opacity",1)
+
+    
+     
+    }
+    
+
+
+        
+      
+    
+        var totalLength = document.getElementById("courbe"+nbc.toString()).getTotalLength();
+        
+        svg.attr("stroke-dasharray", totalLength + " " + totalLength)
+        .attr("stroke-dashoffset", totalLength)
+       .transition().duration(time).ease(d3.easeLinear)
+        .attr("stroke-dashoffset", 0);
+
+        var x = d3.scaleLinear()
+        .domain([1955, 2025])         
+        .range([margin, width]); 
+        
+        svgaxis.attr("width", viewportSize().width-15).attr("height", viewportSize().height-15);
+        svgaxis.append("g").attr("id","axis"+nbc.toString())
+        .attr("transform", `translate(0,${height-margin})`)     
+        .call(d3.axisBottom(x).ticks(5).tickFormat(d3.format("d"))).attr("class", "year");
+        svgaxis.append("g").attr("id","axist"+nbc.toString())
+        d3.select("#axist"+nbc.toString())
+        .append("text").attr("class","axistext")
+        .attr("x",width/2+150).attr("text-anchor","middle")
+        .attr("y",height-margin-15).attr("fill","currentColor")
+        .text("Année"); 
+        
+        var y= d3.scaleLinear()
+        .domain([420, 310])         
+        .range([margin, height-margin]); 
+        
+        svgaxis2.attr("width", viewportSize().width-15).attr("height", viewportSize().height-15);
+        svgaxis2.append("g").attr("id","axis2"+nbc.toString())
+        .attr("transform", `translate(${width},0)`)     
+        .call(d3.axisRight(y).ticks(10).tickFormat(d3.format("d"))).attr("class", "value");
+
+        svgaxis2.append("g").attr("id","axist2"+nbc.toString());
+        d3.select("#axist2"+nbc.toString())
+        .append("text").attr("class","axistext").attr("fill","currentColor")
+        .attr("x",width-margin+20).attr("text-anchor","end")
+        .attr("y",height/2-50).attr("fill","currentColor")
+        .text("Taux de CO")
+        .append('tspan')
+        .text('2')
+        .style('font-size', '.5rem')
+        .attr('dx', '0')
+        .attr('dy', '.3em');
+
+        d3.select("#axist2"+nbc.toString())
+        .append("text").attr("class","axistext")
+        .attr("x",width-margin+20).attr("text-anchor","end")
+        .attr("y",height/2+15-50).attr("fill","currentColor")
+        .text("(ppm)");
+
+       
+        svgpoint.attr("width",viewportSize().width-15)
+            .attr("height", viewportSize().height-15);
+        group = svgpoint.append("g").attr("id","point"+nbc.toString());
+
+       
+        group.selectAll("circle")
+            .data(data).enter().append("circle")
+            .attr("class","point")
+            .attr("id",d =>  "year-" + d.year+nbc.toString())  
+            .attr("cx", d => xScale(d.year))
+            .attr("cy", d => yScale(d.value))
+            .attr("r",5).attr("stroke","red").attr("stroke-width",3)
+            .attr("opacity",0).attr("fill-opacity",0).attr("opacity",0)
+        
+       
+        
+
+    group3 = svgpoint.append("g").attr("id","stripes2"+nbc.toString());
+    group3.selectAll("rect")
+    .data(world).enter()
+    .append("rect")
+    .attr("class","stripes2")
+    .attr("id", d=> "stripe2-" + d.year+nbc.toString())  
+    .attr("x", d=>xScale(d.year)-transX/2)
+    .attr("y", height-10)
+    .attr("height", 100)
+    .attr("stroke-width",0)
+    .attr("width", transX).attr('fill','white')
+    .style("opacity",0)
+    .on("mouseover", function(d){
+             d3.select("#year-"+d.year+nbc.toString())
+             .attr("opacity",1);
+            
+             d3.selectAll(".stripes")
+             .style("opacity",0.3);
+             d3.select("#stripe-"+d.year+nbc.toString())
+             .style("opacity",1);
+             Tooltip.style("opacity", 1)
+            
+            })
+             .on("mouseout", function(d){ 
+                d3.select("#year-"+d.year+nbc.toString())
+                .attr("opacity",0);
+                       
+                d3.selectAll(".stripes")
+                .style("opacity",1);
+                Tooltip.style("opacity", 0)
+             
+
+            })
+            .on("mousemove", function(d){
+                ppm=data.find(elem=>elem.year==d.year).value
+                Tooltip
+      .html("<b>"+d.year+"</b><br>"+ppm.toFixed(0)+" ppm<br>"+((d.value) > 0 ? '+' : '')+
+            (d.value).toFixed(2) +" °C")
+      .style("margin-left", (d3.mouse(this)[0]) + "px")
+      .style("margin-top", (yScale(ppm)+10) + "px")
+
+            })
+            .on("click", function(d){
+              window.open("https://www.metoffice.gov.uk/hadobs/crutem5/data/CRUTEM.5.0.1.0/download.html")
+
+            })
+            
+;
+        groupstory = svgpoint.append("g").attr("id","story"+nbc.toString());
+
+        d3.select("#story"+nbc.toString())
+        .append("circle")
+            .attr("cx", xScale(data[6].year))
+            .attr("cy", yScale(data[6].value))
+            .attr("r",4).attr("stroke","currentColor").attr("stroke-width",2)
+            .attr("fill-opacity",0).attr("opacity",0)
+            .transition().delay(time*5/60).duration(500).ease(d3.easeLinear)
+            .attr("opacity",1)
+            
+        d3.select("#story"+nbc.toString())
+            .append("text").attr("class","storyt").attr("id","https://www.climatefiles.com/climate-change-evidence/presidents-report-atmospher-carbon-dioxide/")
+            .attr("x", xScale(data[6].year))
+            .attr("y", yScale(data[6].value)+20)
+            .style("fill","currentColor")
+            .style('font-size', '.8rem').attr("text-anchor","left")
+            .text("Rapport remis au Président Johnson")
+            .style("opacity",0)
+            .transition().delay(time*5/60).duration(500).ease(d3.easeLinear)
+            .style("opacity",1)
+            
+       
+
+
+        d3.select("#story"+nbc.toString())
+        .append("circle")
+            .attr("cx", xScale(data[20].year))
+            .attr("cy", yScale(data[20].value))
+            .attr("r",4).attr("stroke","currentColor").attr("stroke-width",2)
+            .attr("fill-opacity",0).attr("opacity",0)
+            .transition().delay(time*18/60).duration(500).ease(d3.easeLinear)
+            .attr("opacity",1)
+        d3.select("#story"+nbc.toString())
+            .append("text").attr("class","storyt").attr("id","https://uploads.guim.co.uk/2022/06/02/SSO_148878_031_07.pdf")
+            .attr("x", xScale(data[20].year)-3)
+            .attr("y", yScale(data[20].value)+22)
+            .style("fill","currentColor")
+            .style('font-size', '.8rem').attr("text-anchor","left")
+            .text("Rapport remis au Président Carter")
+            .style("opacity",0)
+            .transition().delay(time*18/60).duration(500).ease(d3.easeLinear)
+            .style("opacity",1)
+        
+                   
+
+            d3.select("#story"+nbc.toString())
+        .append("circle")
+            .attr("cx", xScale(data[23].year))
+            .attr("cy", yScale(data[23].value))
+            .attr("r",4).attr("stroke","currentColor").attr("stroke-width",2)
+            .attr("fill-opacity",0).attr("opacity",0)
+            .transition().delay(time*21/60).duration(500).ease(d3.easeLinear)
+            .attr("opacity",1)
+        d3.select("#story"+nbc.toString())
+            .append("text").attr("class","storyt").attr("id","https://www.documentcloud.org/documents/2805576-1982-Exxon-Memo-to-Management-About-CO2")
+            .attr("x", xScale(data[23].year)+11)
+            .attr("y", yScale(data[23].value)+12)
+            .style("fill","currentColor")
+            .style('font-size', '.8rem').attr("text-anchor","left")
+            .text("Rapport interne chez Exxon")
+            .style("opacity",0)
+            .transition().delay(time*21/60).duration(500).ease(d3.easeLinear)
+            .style("opacity",1)
+       
+
+
+        d3.select("#story"+nbc.toString())
+        .append("circle")
+            .attr("cx", xScale(data[38].year))
+            .attr("cy", yScale(data[38].value))
+            .attr("r",4).attr("stroke","currentColor").attr("stroke-width",2)
+            .attr("fill-opacity",0).attr("opacity",0)
+            .transition().delay(time*36/60).duration(500).ease(d3.easeLinear)
+            .attr("opacity",1)
+        d3.select("#story"+nbc.toString())
+            .append("text").attr("class","storyt").attr("id","https://fr.wikipedia.org/wiki/Protocole_de_Kyoto")
+            .attr("x", xScale(data[38].year))
+            .attr("y", yScale(data[38].value)+20)
+            .style("fill","currentColor")
+            .style('font-size', '.8rem').attr("text-anchor","left")
+            .text("Protocole de Kyoto")
+            .style("opacity",0)
+            .transition().delay(time*36/60).duration(500).ease(d3.easeLinear)
+            .style("opacity",1)
+
+        d3.select("#story"+nbc.toString())
+        .append("circle")
+            .attr("cx", xScale(data[50].year))
+            .attr("cy", yScale(data[50].value))
+            .attr("r",4).attr("stroke","currentColor").attr("stroke-width",2)
+            .attr("fill-opacity",0).attr("opacity",0)
+            .transition().delay(time*48/60).duration(500).ease(d3.easeLinear)
+            .attr("opacity",1)
+        d3.select("#story"+nbc.toString())
+            .append("text").attr("class","storyt").attr("id","https://fr.wikipedia.org/wiki/Accord_de_Copenhague")
+            .attr("x", xScale(data[50].year)-130)
+            .attr("y", yScale(data[50].value)-10)
+            .style("fill","currentColor")
+            .style('font-size', '.8rem').attr("text-anchor","left")
+            .text("Accords de Copenhague")
+            .style("opacity",0)
+            .transition().delay(time*48/60).duration(500).ease(d3.easeLinear)
+            .style("opacity",1)
+            
+    d3.select("#story"+nbc.toString())
+        .append("circle")
+            .attr("cx", xScale(data[56].year))
+            .attr("cy", yScale(data[56].value))
+            .attr("r",4).attr("stroke","currentColor").attr("stroke-width",2)
+            .attr("opacity",0).attr("fill-opacity",0)
+            .transition().delay(time*54/60).duration(500).ease(d3.easeLinear)
+            .attr("opacity",1)
+        d3.select("#story"+nbc.toString())
+            .append("text").attr("class","storyt").attr("id","https://unfccc.int/fr/a-propos-des-ndcs/l-accord-de-paris")
+            .attr("x", xScale(data[56].year)-90)
+            .attr("y", yScale(data[56].value)-10)
+            .style("fill","currentColor")
+            .style('font-size', '.8rem').attr("text-anchor","left")
+            .text("Accords de Paris")
+            .style("opacity",0)
+            .transition().delay(time*54/60).duration(500).ease(d3.easeLinear)
+            .style("opacity",1)
+
+        d3.select("#story"+nbc.toString())
+            .append("text").attr("class","storyt").attr("id","https://fr.wikipedia.org/wiki/Greta_Thunberg")
+            .attr("x", 30)
+            .attr("y", 50)
+            .style("fill","currentColor")
+            .style('font-weight','bold')
+            .text("Climat : 60 ans d'INACTION !")
+            .style("opacity",0)
+            .style('font-size','1.6em').attr("text-anchor","left")
+            .transition().delay(time-1000).duration(1000).ease(d3.easeLinear)
+             .style("opacity",1)
+        
+             d3.selectAll(".storyt")
+             .on("mouseover", function(){
+                d3.select(this).style("color","lightblue")
+             
+             })
+             .on("mouseout", function(){
+                d3.select(this).style("color","currentColor")
+             
+             })
+             .on("click", function(){
+                d3.select(this).style("color","currentColor")
+                window.open(this.id);
+             })
+
+
+             group2 = svgpoint.append("g").attr("id","point2"+nbc.toString());
+             group2.selectAll("circle")
+            .data(data).enter().append("circle")
+            .attr("class","point")
+            .attr("id",d =>  "year2-" + d.year+nbc.toString())  
+            .attr("cx", d => xScale(d.year))
+            .attr("cy", d => yScale(d.value))
+            .attr("r",20).attr("fill","red")
+            .attr("fill-opacity",0).attr("opacity",0)
+
+            .on("mouseover", function(d){
+             d3.select("#year-"+d.year+nbc.toString())
+             .attr("opacity",1);
+            
+             d3.selectAll(".stripes")
+             .style("opacity",0.3);
+             d3.select("#stripe-"+d.year+nbc.toString())
+             .style("opacity",1);
+             Tooltip.style("opacity", 1)
+            
+            })
+             .on("mouseout", function(d){ 
+                d3.select("#year-"+d.year+nbc.toString())
+                .attr("opacity",0);
+                       
+                d3.selectAll(".stripes")
+                .style("opacity",1);
+                Tooltip.style("opacity", 0)
+             
+
+            })
+            .on("mousemove", function(d){
+                temp=world.find(elem=>elem.year==d.year).value;
+                Tooltip
+        .html("<b>"+d.year+"</b><br>"+d.value.toFixed(0)+" ppm <br>"+((temp) > 0 ? '+' : '')+
+            (temp).toFixed(2) +" °C")
+      .style("margin-left", (d3.mouse(this)[0]+10) + "px")
+      .style("margin-top", (d3.mouse(this)[1]+5) + "px")
+
+            })
+
+            .on("click", function(d){
+              window.open("https://gml.noaa.gov/ccgg/trends/")
+
+            })
+        }
+let nbc=0; 
+svg = d3.select("#graph")
+       .attr("class","svggraph")
+       .append("svg");
+svgaxis = d3.select("#axis")
+    .append("svg");
+    
+svgaxis2 = d3.select("#axis2")
+    .append("svg");
+svgstripes = d3.select("#stripes").append("svg")
+
+var Tooltip = d3.select("#tooltip")
+    .append("div")
+    .style("opacity", 0)
+    .attr("class", "tooltip")
+    .style("background-color", "white")
+    .style("border", "solid")
+    .style("border-width", "2px")
+    .style("border-radius", "5px")
+    .style("padding", "5px")
+
+svgpoint = d3.select("#point")
+    .append("svg");
+
+
+
+
+
+
+curve(svg,svgaxis,svgaxis2,svgpoint,svgstripes);
+
+$(window).on("debouncedresize", function() {
+   time=100;
+   curve(svg,svgaxis,svgaxis2,svgpoint,svgstripes);
+});
+
+function viewportSize() {
+    var d = document.documentElement;
+    return {
+        height: d.clientHeight,
+        width: d.clientWidth
+        
+    };
+    }
+    </script>
