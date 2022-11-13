@@ -1,5 +1,11 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
+<meta property="og:title" content="Climat: 60 ans d'INACTION." />
+<meta property="og:url" content="https://pytheas13.github.io/climate/"/>
+<meta property="og:description" content="Un graphique dynamique qui résume 60 ans de bla-bla-bla climatique.">
+<meta property="og:image" content="https://raw.githubusercontent.com/Pytheas13/climate/main/vignette.jpg"/>
+
+<meta property="og:site_name" content="Pytheas13"/>
 <head>
 <!-- Load d3.js -->
 <script src="https://d3js.org/d3.v5.js"></script>
@@ -281,12 +287,14 @@ function curve (svg,svgaxis,svgaxis2,svgpoint,svgstripes) {
 
             })
             .on("mousemove", function(d){
+                if (d3.mouse(this)[0]>xScale(2002)){ymar=0;xmar=10}
+                else {ymar=-70;xmar=-60}
                 ppm=data.find(elem=>elem.year==d.year).value
                 Tooltip
       .html("<b>"+d.year+"</b><br>"+ppm.toFixed(0)+" ppm<br>"+((d.value) > 0 ? '+' : '')+
             (d.value).toFixed(2) +" °C")
-      .style("margin-left", (d3.mouse(this)[0]) + "px")
-      .style("margin-top", (yScale(ppm)+10) + "px")
+      .style("margin-left", (d3.mouse(this)[0]+xmar) + "px")
+      .style("margin-top", (yScale(ppm)+ymar) + "px")
 
             })
            
@@ -475,13 +483,14 @@ function curve (svg,svgaxis,svgaxis2,svgpoint,svgstripes) {
 
             })
             .on("mousemove", function(d){
+                if (d3.mouse(this)[0]>xScale(2002)){ymar=0;xmar=10}
+                else {ymar=-70;xmar=-60}
                 temp=world.find(elem=>elem.year==d.year).value;
                 Tooltip
         .html("<b>"+d.year+"</b><br>"+d.value.toFixed(0)+" ppm <br>"+((temp) > 0 ? '+' : '')+
             (temp).toFixed(2) +" °C")
-      .style("margin-left", (d3.mouse(this)[0]+10) + "px")
-      .style("margin-top", (d3.mouse(this)[1]+5) + "px")
-
+         .style("margin-left", (d3.mouse(this)[0]+xmar) + "px")
+      .style("margin-top", (d3.mouse(this)[1]+ymar) + "px")
             })
 
             
