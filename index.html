@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
-
+<head>
 <!-- Load d3.js -->
 <script src="https://d3js.org/d3.v5.js"></script>
 <script
@@ -59,6 +59,9 @@ body {
 
 </style>
 <!-- Create a div where the graph will take place -->
+</head>
+<body>
+
 <div id="graph">
 </div>
 <div id="axis">
@@ -286,10 +289,7 @@ function curve (svg,svgaxis,svgaxis2,svgpoint,svgstripes) {
       .style("margin-top", (yScale(ppm)+10) + "px")
 
             })
-            .on("click", function(d){
-              window.open("https://www.metoffice.gov.uk/hadobs/crutem5/data/CRUTEM.5.0.1.0/download.html")
-
-            })
+           
             
 ;
         groupstory = svgpoint.append("g").attr("id","story"+nbc.toString());
@@ -417,7 +417,7 @@ function curve (svg,svgaxis,svgaxis2,svgpoint,svgstripes) {
             .style("opacity",1)
 
         d3.select("#story"+nbc.toString())
-            .append("text").attr("class","storyt").attr("id","https://fr.wikipedia.org/wiki/Greta_Thunberg")
+            .append("text").attr("class","storyt").attr("id","credit.html")
             .attr("x", 30)
             .attr("y", 50)
             .style("fill","currentColor")
@@ -450,7 +450,7 @@ function curve (svg,svgaxis,svgaxis2,svgpoint,svgstripes) {
             .attr("id",d =>  "year2-" + d.year+nbc.toString())  
             .attr("cx", d => xScale(d.year))
             .attr("cy", d => yScale(d.value))
-            .attr("r",20).attr("fill","red")
+            .attr("r",25).attr("fill","red")
             .attr("fill-opacity",0).attr("opacity",0)
 
             .on("mouseover", function(d){
@@ -484,10 +484,7 @@ function curve (svg,svgaxis,svgaxis2,svgpoint,svgstripes) {
 
             })
 
-            .on("click", function(d){
-              window.open("https://gml.noaa.gov/ccgg/trends/")
-
-            })
+            
         }
 let nbc=0; 
 svg = d3.select("#graph")
@@ -534,3 +531,4 @@ function viewportSize() {
     };
     }
     </script>
+</body>
