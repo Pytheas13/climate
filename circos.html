@@ -273,7 +273,75 @@
                 });
        
      
+        layer.on("touchstart",function(e){
+            e.preventDefault();
+            secteurOn =feature.properties.circo_uai;
+            if (!tabuai.includes(secteurOn)) {minZoom = 11}
+            $(".clust").css("opacity",0.2);
+            $(".ecole").css("opacity",0.2);
+            $(".scl"+secteurOn).css("opacity",1);
+            $(".ec"+secteurOn).css("opacity",1);
+            $(".spid").css("opacity",0.3);
+            
+               
 
+                
+             $(".secteurs").css({transition:"0.4s",fillOpacity:0.05});
+           
+             $(".t"+feature.properties.circo_uai).css({transition:"0.4s",opacity:1});
+               
+            $(".s"+feature.properties.circo_uai).css({transition:"0.4s",fillOpacity:0.3});
+
+                
+            var commaffich =[]
+            var inseeaffich= []
+            for (var i=0;i<ecoles.features.length;i++) {
+                if (ecoles.features[i].properties.circo_uai == feature.properties.circo_uai) {
+                    
+                    if (!commaffich.includes(ecoles.features[i].properties.commune)){
+                       
+                        commaffich.push(ecoles.features[i].properties.commune);
+                        inseeaffich.push(ecoles.features[i].properties.insee);
+                    }
+                   
+                    
+                }
+            }
+            commaffich=commaffich.sort(tri_commune);
+            
+            var htmlcont ="<h1>"+feature.properties.circo+"</h1>";
+            for (var j=0;j<commaffich.length;j++) {
+                htmlcont+=commaffich[j]+"<br>"
+            }
+            for (var o=0;o<inseeaffich.length;o++) {
+                $(".c"+inseeaffich[o]).css("opacity",1)
+            }
+            
+          
+            document.getElementById("info").innerHTML = htmlcont;
+            $(".legend").css("opacity",1);
+
+                
+        var zoom = map.getZoom();
+        
+        if (zoom < minZoom) {
+          
+           $(".ecole").css("display","none");
+           $(".clust").css("display","none");
+           $(".legec").css({transition:"0.3s",opacity:0});
+                
+            
+        } else if (zoom >= minZoom) {
+            
+            $(".ecole").css("display","initial");
+            $(".clust").css("display","initial");
+            $(".legec").css({transition:"0.3s",opacity:1});
+           
+            
+        }
+           
+                
+        });
         
         layer.on("mouseover",function(e){
             secteurOn =feature.properties.circo_uai;
