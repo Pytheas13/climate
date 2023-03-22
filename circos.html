@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html>
+    <title>Circonscriptions</title>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.2/leaflet.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    
+    <style>
+    html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    }
+
+    #map { 
+        width: 100%;
+        height: 100%;
+        float: right;
+    }
+
+    .commune {
+        transition : 0.5s;
+        opacity:0;
+    }
+    .clust2 {
+   
+    color: white;
+   
+    fill-opacity: 1;
+    
+    }
+    .clust {
+    transition : 0.5s;
+    color: white;
+   
+    fill-opacity: 1;
+    
+    }
+
+    .clust:hover {
+        color: rgba(255,100,100,1);
+    }
+    .svgtextc{
+  
+    font-weight: bold;
+    font-family: Arial, Helvetica, sans-serif;
+    filter: drop-shadow(1px 1px 1px rgb(0 0 0 / 0.8));
+    color : black;
+    }
+
+    .comm {
+    background-color:rgba(220, 220, 220, 1);            font-size: 10pt;
+            border: rgba(0, 0, 0, 0);
+            box-shadow: none;
+            font-style: italic;
+            text-align: center;
+            font-family: serif;
+            font-weight: bold;
+            color: black;
+    }
+
+    .sec {
+        padding  : 1px;
+    background-color:rgba(255,255, 255, 0.7);
+            font-size: 14pt;
+            border: rgba(0, 0, 0, 0);
+            box-shadow: none;
+            text-align: center;
+            font-family: serif;
+            font-weight: bold;
+            color: black;
+            
+    }
+
+    .legend {
+        padding: 6px 6px;
+        background-color: rgba(255,255,255,1);
+        box-shadow: 0 0 15px rgba(0,0,0,0.5);
+        border-radius: 5px;
+        border: solid 1px;
+        width: 200px;
+        transition : 0.3s;
+        opacity : 0;
+        font-size: 10pt;
+      
+    }
+
+    .legend h1 {
+        background-color: rgb(50,50,50);
+        color : white;
+        padding: 2px;
+        text-align: center;
+        font-size: 12pt;
+        font-weight: bold;
+    
+    }
+
+    .legec {
+        padding: 6px 6px;
+        background-color: rgba(255,255,255,1);
+        box-shadow: 0 0 15px rgba(0,0,0,0.5);
+        border-radius: 5px;
+        border: solid 1px;
+        width: 180px;
+        transition : 0.3s;
+        opacity : 0;
+        font-size: 8pt;
+      
+    }
+
+    .titre {
+        padding: 2px;
+        background-color: rgba(255,255,255,0.7);
+        box-shadow: 0 0 15px rgba(0,0,0,0.5);
+        border-radius: 5px;
+        border: solid 1px;
+        width: 350px;
+        opacity : 1;
+        font-size: 10pt;
+        text-align: center;
+      
+    }
+
+    .titre h1 {
+        color : black;
+        padding: 2px;
+        text-align: center;
+        font-size: 14pt;
+        font-weight: bold;
+    
+    }
+
+    .titre:hover {
+        background-color: rgba(255,255,255,1);
+        cursor: pointer;
+    }
+    </style>
+   
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.2/leaflet.js"></script>
+    <script
+			  src="https://code.jquery.com/jquery-3.6.1.min.js"
+			  integrity="sha256-o88AwQnZB+VDvE9tvIXrMQaPlFFSUTR+nldQm1LuPXQ="
+			  crossorigin="anonymous"></script>
+
+     
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+      
+   
+   
+    <script src="https://d3js.org/d3.v5.js"></script>
+
+    <script src="./data/communes.js"> // données législatives </script>
+    <script src="./data/circos.js"> // données législatives </script>
+       <script src="./data/ecoles.js"> // données législatives </script>
+   
+       
+
+</head>
+
+<body>
+    <div id="map"></div>
+   
+<script>
+    const taille_icone = 36;
+    
+    var secteurOn='';
+    const tabuai=["0132716G","0131310D","0131301U","0131306Z","0131300T","0131302V","0131308B","0131309C","0131305Y","0131297P","0133284Z","0133618M","0131298R","0131303W","0133619N"]
+    var minZoom = 13;
+    // initialisation de la carte
+    let map = L.map("map", {attributionControl:false,
+    zoomSnap: 0.2
+    }).setView([43.5, 5], 10); // vue département 13
+
+   var OSM = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',opacity :0.7
+        }).addTo(map); // tuiles Open Street Map
+
+   
+    L.control.scale({imperial: false,maxWidth: 200,position: 'bottomright'}).addTo(map);
+
+    var secteurColor = d3.scaleLinear()
+            .domain([1,2,3,4,5])
+            .range(["rgb( 105, 107, 73)", "rgb( 205, 118, 128)","rgb( 255, 170, 101)","rgb( 197, 20, 1)","green"])
+
+            .interpolate(d3.interpolateRgb.gamma(1));
+    
+    
+    communesl=L.geoJSON(communes,{onEachFeature : onCommune,
+                         style : function (feature) {
+                             var classe = 'commune c'+feature.properties.INSEE_COM;
+                             return {
+                                className : classe, color :'blue',weight : 1.5,dashArray: '5,10',fillOpacity : 0
+                             }
+                         }}).addTo(map);
+
+    circosl=L.geoJSON(circos,{onEachFeature : onCirco,
+                         style : function (feature) {
+                             var classe = 'secteurs s'+feature.properties.circo_uai
+                            
+
+                             return {
+                                className : classe, color:'black',weight : 2,fillOpacity : 1,
+                                fillColor: `${secteurColor(parseInt(feature.properties.color_id))}`
+                             }
+                         }}).addTo(map);
+    
+    
+    ecolesl=L.geoJSON(ecoles,{onEachFeature : onEcole,pointToLayer: etabIcon
+                          });
+ 
+ 
+   
+    function onEcole(feature,layer) {
+
+        layer.bindTooltip(feature.properties.nom, 
+                {interactive: false,sticky : false,
+                permanent: false, 
+                direction: "right", opacity: 1, className: 'ectooltip'
+                })
+        layer.on("mouseover",function(e){
+        $(".comm").css("display","none")
+        target=circosl.getLayer(feature.properties.circo_uai);
+        
+        if (target != undefined) target.fireEvent("mouseover"); 
+
+    
+        });
+        
+        layer.on("mouseout",function(e){
+        $(".comm").css("display","block")
+        target=circosl.getLayer(feature.properties.circo_uai);
+
+        if (target != undefined) target.fireEvent("mouseout"); 
+
+
+        });
+
+ }
+    
+    // secteurs
+  
+    function onCommune(feature,layer) {
+        
+        layer._leaflet_id = feature.properties.NOM;
+        
+      
+        var classe = 'c'+feature.properties.secteur;
+
+        const tooltipContent = '<div class="container">' +"<b>"+feature.properties.NOM +"</b>"+"<br></div>";
+      //  layer.bindTooltip(tooltipContent, 
+        //        {interactive: false,sticky : false,
+          //      permanent: false, 
+            //    direction: "right", opacity: 1, className: 'comm'
+              //  });
+    };
+
+    function onCirco(feature,layer) {
+        layer._leaflet_id = feature.properties.circo_uai;
+        
+       
+        //layer.bindPopup(collPopup(feature,layer));  // popup
+        const tooltipContent = "<div class='tsec t"+feature.properties.circo_uai+"'>" +"<b>"+feature.properties.circo+"</b>"+"<br></div>";
+        layer.bindTooltip(tooltipContent, 
+                {interactive: false,
+                permanent: false,sticky : true, 
+                direction: "center", opacity: 1, className: 'sec'
+                });
+       
+     
+
+        
+        layer.on("mouseover",function(e){
+            secteurOn =feature.properties.circo_uai;
+            if (!tabuai.includes(secteurOn)) {minZoom = 11}
+            $(".clust").css("opacity",0.2);
+            $(".ecole").css("opacity",0.2);
+            $(".scl"+secteurOn).css("opacity",1);
+            $(".ec"+secteurOn).css("opacity",1);
+            $(".spid").css("opacity",0.3);
+            
+               
+
+                
+             $(".secteurs").css({transition:"0.4s",fillOpacity:0.05});
+           
+             $(".t"+feature.properties.circo_uai).css({transition:"0.4s",opacity:1});
+               
+            $(".s"+feature.properties.circo_uai).css({transition:"0.4s",fillOpacity:0.3});
+
+                
+            var commaffich =[]
+            var inseeaffich= []
+            for (var i=0;i<ecoles.features.length;i++) {
+                if (ecoles.features[i].properties.circo_uai == feature.properties.circo_uai) {
+                    
+                    if (!commaffich.includes(ecoles.features[i].properties.commune)){
+                       
+                        commaffich.push(ecoles.features[i].properties.commune);
+                        inseeaffich.push(ecoles.features[i].properties.insee);
+                    }
+                   
+                    
+                }
+            }
+            commaffich=commaffich.sort(tri_commune);
+            
+            var htmlcont ="<h1>"+feature.properties.circo+"</h1>";
+            for (var j=0;j<commaffich.length;j++) {
+                htmlcont+=commaffich[j]+"<br>"
+            }
+            for (var o=0;o<inseeaffich.length;o++) {
+                $(".c"+inseeaffich[o]).css("opacity",1)
+            }
+            
+          
+            document.getElementById("info").innerHTML = htmlcont;
+            $(".legend").css("opacity",1);
+
+                
+        var zoom = map.getZoom();
+        
+        if (zoom < minZoom) {
+          
+           $(".ecole").css("display","none");
+           $(".clust").css("display","none");
+           $(".legec").css({transition:"0.3s",opacity:0});
+                
+            
+        } else if (zoom >= minZoom) {
+            
+            $(".ecole").css("display","initial");
+            $(".clust").css("display","initial");
+            $(".legec").css({transition:"0.3s",opacity:1});
+           
+            
+        }
+           
+                
+        });
+
+        layer.on("mouseout",function(e){
+            minZoom = 13;
+            secteurOn="";
+            $(".commune").css("opacity",0);
+            $(".clust").css("opacity",1);
+            $('.c'+feature.properties.circo_uai).css({transition:"0.5s",opacity:0})
+            $(".secteurs").css({transition:"0.4s",fillOpacity:0.2});
+          
+           
+            $(".legend").css("opacity",0);
+                
+        var zoom = map.getZoom();
+        
+        if (zoom < minZoom) {
+          
+           $(".ecole").css("display","none");
+           $(".clust").css("display","none");
+           $(".legec").css({transition:"0.3s",opacity:0});
+                
+            
+        } else if (zoom >= minZoom) {
+            
+            $(".ecole").css("display","initial");
+            $(".clust").css("display","initial");
+            $(".legec").css({transition:"0.3s",opacity:1});
+           
+            
+        }
+           
+        });
+
+        layer.on("click",function(e){
+            map.fitBounds(layer.getBounds()); 
+        if (!tabuai.includes(secteurOn)) {minZoom = 11}
+        var zoom = map.getZoom();
+        
+        if (zoom < minZoom) {
+          
+           $(".ecole").css("display","none");
+           $(".clust").css("display","none");
+           $(".legec").css({transition:"0.3s",opacity:0});
+                
+            
+        } else if (zoom >= minZoom) {
+            
+            $(".ecole").css("display","initial");
+            $(".clust").css("display","initial");
+            $(".legec").css({transition:"0.3s",opacity:1});
+           
+            
+        }
+           
+        })
+
+    }
+  
+
+    $(".secteurs").css("fill-opacity","0.2");
+    
+
+    
+    function serializeXmlNode(xmlNode) { //fonction pour traduire en XML
+        if (typeof window.XMLSerializer != "undefined") {
+            return (new window.XMLSerializer()).serializeToString(xmlNode);
+        } else if (typeof xmlNode.xml != "undefined") {
+            return xmlNode.xml;
+        }
+        return "";
+    }
+    
+    function poly(n,taille,rep,lettre, couleur,nof){  // fonction pour créer un svg en polygone régulier (svg+D3)
+        
+      
+        cstroke= 'black'; cstrokew ="1"
+
+        radius=taille_icone/2;
+        r=taille/2-4;
+        if (n<5) {classe='icon'}
+        else {classe='icon2'} // séparation collège et autres
+        svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        vis = d3.select(svg).attr("width", radius*2).attr("height", radius*2).
+                attr("class",classe); // classe css pour mise en valeur sur mouseover
+
+        if (rep == null) {rep='white'};    
+
+        let poly_svg = ""
+        var xof=0,yof=0;
+        if (n==3) {xof=0;yof=0} else {xof=0;yof=0} 
+        if (nof != null) {xof =0;yof=0}
+        for (let i=1;i<n+1;i++){
+            x=xof+r*Math.cos(2*i*Math.PI/n)*Math.cos(Math.PI*(n-2)/n/2)  // polygone
+            -r*Math.sin(2*i*Math.PI/n)*Math.sin(Math.PI*(n-2)/n/2)
+            +radius;
+            y=yof+r*Math.sin(2*i*Math.PI/n)*Math.cos(Math.PI*(n-2)/n/2)
+            +r*Math.cos(2*i*Math.PI/n)*Math.sin(Math.PI*(n-2)/n/2)
+            +radius;
+            poly_svg+=x+','+y+' ';
+        }
+        vis.append("polygon").attr("stroke",cstroke).attr("stroke-width",cstrokew)
+           .attr("filter","drop-shadow(2px 2px 1px rgb(0 0 0 / 0.8))")
+            .attr("fill",rep).attr("class","svgpoly")
+            .attr("points",poly_svg);
+        
+        if (lettre != null){
+        vis.append("text").text(lettre).attr("font-size",taille/2).attr("font-weight","bold")  //lettre optionelle
+            .attr("fill",couleur).attr("text-anchor","middle")
+            .attr("x",radius).attr("y",radius+Math.sqrt(taille))
+            .attr("font-family","Arial, Helvetica, sans-serif")
+            .attr("filter","drop-shadow(1px 1px 1px rgb(0 0 0 / 0.8))");   
+        }
+
+        return serializeXmlNode(svg);
+    }
+
+    function etabIcon(feature, latlng) { // fonction de création d'icone
+        let size=30;
+        let lettre=null; let couleurl = null;
+        let opa = 1;
+
+        if (feature.properties.type == 'primaire') {cote=5;}  // type d'icone
+        if (feature.properties.type == 'élémentaire') cote=4;
+        if (feature.properties.type == 'maternelle') cote=3;
+      
+
+
+        if (feature.properties.rep == 'Hors EP') couleur='white';  // couelur de l'icone
+        if (feature.properties.rep =='REP') couleur='yellow';
+        if (feature.properties.rep =='REP+') couleur='orange';
+
+        var classe = 'ecole c'+feature.properties.circo_uai+' ec'+feature.properties.circo_uai;
+
+        let  etabIcon = L.divIcon({ // icone établissement
+            html: poly(cote , size , couleur, lettre, couleurl),
+            iconSize:     [taille_icone,taille_icone],
+            tooltipAnchor:   [15,0],
+            className : classe
+        });
+   
+        return L.marker(latlng, { icon: etabIcon, opacity : opa});
+        }
+
+ 
+        function tri_commune(a,b) {   // arrondissements
+            
+            if ((a.substr(11,1)==='e' && a.substr(0,4)==='Mars') || (a.substr(11,1)==='è'&& a.substr(0,4)==='Mars')) {
+                a=a.substr(0,10)+"0"+a.substr(10)
+            }
+
+            if ((b.substr(11,1)==='e' && b.substr(0,4)==='Mars') || (b.substr(11,1)==='è' && b.substr(0,4)==='Mars')) {
+                b=b.substr(0,10)+"0"+b.substr(10)
+            }
+        
+            if (a > b) return 1;
+            if (a < b ) return -1;
+        }
+    
+    
+
+   
+    
+  
+                
+        
+        
+    let legec = L.control({position: "bottomright"});  // controles des couches
+    legec.onAdd = function() {
+    let div = L.DomUtil.create("div", "legec"); 
+    div.innerHTML = 
+    poly(3,24,null,null,null,true)+poly(3,24,"yellow",null,null,true)+ poly(3,24,"orange",null,null,true)+"<br>Maternelle Hors EP, REP, REP+<br>"+
+    poly(4,24,null,null,null,true)+poly(4,24,"yellow",null,null,true)+ poly(4,24,"orange",null,null,true)+"<br>Elémentaire Hors EP, REP, REP+<br>"+
+    poly(5,24,null,null,null,true)+poly(5,24,"yellow",null,null,true)+ poly(5,24,"orange",null,null,true)+"<br>Primaire Hors EP, REP, REP+<br>"+
+    `<span class='clust2'>${clusterIcon(3,1,1,1)}</span>`+"Grappe de n écoles";
+   
+
+        return div;
+    }
+   legec.addTo(map);  
+
+
+    let titre = L.control({position: "bottomleft"});  // controles des couches
+    titre.onAdd = function() {
+    let div = L.DomUtil.create("div", "titre"); 
+    div.innerHTML = 
+        "<h1>Circonscriptions</h1>"
+      +
+      "<p>"+
+        "<b>Survoler une circonscription pour afficher son nom</b></p>"+
+        "<b>Ecoles visibles en zoomant.</b></p>"
+
+        return div;
+    }
+    titre.addTo(map);
+    $(".titre").on("click",function () {map.fitBounds(circosl.getBounds()); })
+
+    let legend = L.control({position: "topright"});  // controles des couches
+    legend.onAdd = function() {
+    let div = L.DomUtil.create("div", "legend"); 
+    div.innerHTML = 
+        '<span id="info"></span>'
+        return div;
+    }
+    legend.addTo(map);
+
+    map.fitBounds(circosl.getBounds()); 
+
+    ecaffich = L.markerClusterGroup({disableClusteringAtZoom: 18,maxClusterRadius : 50, animate: true,showCoverageOnHover:false,
+             iconCreateFunction: function(cluster) { // fonctio de création des clusters
+        
+           
+        n=cluster.getChildCount();
+        r=Math.sqrt(n)*2+10
+        size=3*r
+        fsize=r
+        center=r+5
+        center_text=2.5*Math.pow(r,0.85);
+        let groups=false;
+
+        nature1=cluster.getAllChildMarkers()[0].feature.properties.type;
+        nature2=cluster.getAllChildMarkers()[1].feature.properties.type;
+        rep1=cluster.getAllChildMarkers()[0].feature.properties.rep;
+        rep2=cluster.getAllChildMarkers()[1].feature.properties.rep;
+        
+       
+  
+        
+      
+        
+
+            long=cluster.getAllChildMarkers().length;
+            var classClust="";
+                nrep=0;rep=0;repp=0;other=0;
+                for (let i=0;i<long;i++) {
+                    switch(cluster.getAllChildMarkers()[i].feature.properties.rep) {
+                        case 'REP':rep++;break;
+                        case 'REP+':repp++;break;
+                        default:nrep++;break
+                    }
+                    if(cluster.getAllChildMarkers()[i].feature.properties.circo_uai) {
+                        var sect=cluster.getAllChildMarkers()[i].feature.properties.circo_uai; 
+                        if (!classClust.includes("scl"+sect)) {
+                            classClust=classClust+" scl"+sect;
+                        }
+                    }
+                    
+                }
+               
+                return L.divIcon({ 
+                html: clusterIcon(n,nrep,rep,repp), 
+                className: 'clust'+classClust,
+                iconSize: size
+                });
+
+          
+       
+
+        }
+
+    });
+
+    function clusterIcon(n,a,b,c) {  // fonction de tracer du cluster, avec le beignet
+    r=Math.sqrt(n)*2+10
+    size=3*r
+    fsize=r
+    center=size/2
+    
+    
+    var data = {a, b, c};
+    margin = 2
+    var radius = size / 2 - margin
+    
+    svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    vis = d3.select(svg).attr("width", size).attr("height", size);
+    vis.attr("class","svgcircle")
+     .attr("filter","drop-shadow(3px 3px 2px rgb(0 0 0 / 0.6))");
+       
+       
+        var color = d3.scaleOrdinal()
+      .domain(data)
+      .range(["white", "yellow", "orange"])
+
+    
+    // Compute the position of each group on the pie:
+    var pie = d3.pie()
+      .value(function(d) {return d.value; })
+    var data_ready = pie(d3.entries(data))
+
+    vis
+      .selectAll('whatever')
+      .data(data_ready)
+      .enter()
+      .append('path')
+      .attr('d', d3.arc()
+        .innerRadius(radius/2)
+        .outerRadius(radius)
+      ).attr("transform", "translate(" + size / 2 + "," + size / 2 + ")")
+      .attr('fill', function(d){ return(color(d.data.key)) })
+      .attr("stroke", "black")
+      .style("stroke-width", "0px")
+      .style("opacity", 1);
+
+      vis.append('circle')
+      .attr('cx',center).attr('cy',center).attr('r',radius)
+      .attr('fill','rgba(0,0,0,0)')
+      .attr("stroke", "black")
+      .style("stroke-width", "2px")
+
+      vis.append('circle')
+      .attr('cx',center).attr('cy',center).attr('r',radius/2.2)
+      .attr('fill','currentColor')
+      .style("stroke-width", "0px")
+
+      
+     vis.append("text").text(n).attr("class","svgtextc")
+        .attr("x",center).attr("y",center+size/8)
+        .attr("font-size",fsize).attr("text-anchor","middle");
+
+    
+
+    return serializeXmlNode(svg);
+}
+ecaffich.addLayer(ecolesl)
+map.addLayer(ecaffich);
+   
+    ecaffich.on('clustermouseover', function(e) {
+      
+        var long=e.layer.getAllChildMarkers().length;
+        for (let i=0;i<long;i++) {
+                    if(e.layer.getAllChildMarkers()[i].feature.properties.circo_uai) {
+                        var cible = e.layer.getAllChildMarkers()[i].feature.properties.circo_uai
+                        var target=circosl.getLayer(cible);
+                      
+                        target.fireEvent("mouseover"); 
+                    }
+                    
+                }
+
+    });
+
+    
+    ecaffich.on('clustermouseout', function(e) {
+        var long=e.layer.getAllChildMarkers().length;
+        for (let i=0;i<long;i++) {
+                    if(e.layer.getAllChildMarkers()[i].feature.properties.circo_uai) {
+                        var cible = e.layer.getAllChildMarkers()[i].feature.properties.circo_uai
+                        var target=circosl.getLayer(cible);
+            
+                        target.fireEvent("mouseout"); 
+                     
+                    }
+                    
+                }
+
+    });
+
+    ecaffich.on('spiderfied', function(e) {
+      
+        e.cluster.options.icon._icon.classList.add('spid')
+        
+    });
+
+    ecaffich.on('unspiderfied', function(e) {
+      
+      e.cluster.options.icon._icon.classList.remove('spid')
+      
+  });
+
+
+ 
+    $(".ecole").css("display","none");
+    $(".clust").css("display","none");
+
+    map.on('zoomend', function() {
+        
+        if (secteurOn!='') {
+            $(".clust").css("opacity",0.2);
+            $(".ecole").css("opacity",0.2);
+            $(".scl"+secteurOn).css("opacity",1);
+            $(".ec"+secteurOn).css("opacity",1);
+        }
+           
+        var zoom = map.getZoom();
+        
+        if (zoom < minZoom) {
+          
+           $(".ecole").css("display","none");
+           $(".clust").css("display","none");
+           $(".legec").css({transition:"0.3s",opacity:0});
+                
+            
+        } else if (zoom >= minZoom) {
+            
+            $(".ecole").css("display","initial");
+            $(".clust").css("display","initial");
+            $(".legec").css({transition:"0.3s",opacity:1});
+           
+            
+        }
+        
+   
+    })
+
+
+
+</script>
+</body>
+</html>
+    
+    
+    
+    
+   
+    
+    
+
+    
+</head>
